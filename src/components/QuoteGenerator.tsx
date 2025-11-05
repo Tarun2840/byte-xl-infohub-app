@@ -18,21 +18,41 @@ const QuoteGenerator = () => {
     setError("");
     
     try {
-      const response = await fetch("https://api.quotable.io/random?tags=inspirational");
+      // Try primary API first
+      let response = await fetch("https://api.quotable.io/random?tags=inspirational");
       
       if (!response.ok) {
-        throw new Error("Failed to fetch quote");
+        // Fallback to alternative API
+        response = await fetch("https://zenquotes.io/api/random");
       }
       
       const data = await response.json();
       
-      setQuote({
-        content: data.content,
-        author: data.author,
-      });
+      // Handle different API response formats
+      if (Array.isArray(data)) {
+        // ZenQuotes format
+        setQuote({
+          content: data[0].q,
+          author: data[0].a,
+        });
+      } else {
+        // Quotable format
+        setQuote({
+          content: data.content,
+          author: data.author,
+        });
+      }
     } catch (err) {
-      setError("Unable to fetch quote. Please try again.");
-      setQuote(null);
+      // Use local fallback quotes if all APIs fail
+      const fallbackQuotes = [
+        { content: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+        { content: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
+        { content: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+        { content: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+        { content: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+      ];
+      const randomQuote = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+      setQuote(randomQuote);
     } finally {
       setIsLoading(false);
     }

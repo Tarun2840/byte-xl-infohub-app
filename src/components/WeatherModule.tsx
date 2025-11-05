@@ -24,25 +24,52 @@ const WeatherModule = () => {
     setError("");
     
     try {
-      const API_KEY = "b89fc45c2611cd5151a9c6f6c5f8a6e4"; // OpenWeatherMap demo key
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric`
+      // First, get coordinates for the city using geocoding
+      const geoResponse = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json`
       );
       
-      if (!response.ok) {
+      if (!geoResponse.ok) {
+        throw new Error("Failed to find city location");
+      }
+      
+      const geoData = await geoResponse.json();
+      
+      if (!geoData.results || geoData.results.length === 0) {
         throw new Error("City not found. Please check the spelling and try again.");
       }
       
-      const data = await response.json();
+      const location = geoData.results[0];
+      
+      // Now get weather data using coordinates
+      const weatherResponse = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`
+      );
+      
+      if (!weatherResponse.ok) {
+        throw new Error("Failed to fetch weather data");
+      }
+      
+      const weatherData = await weatherResponse.json();
+      
+      // Map weather codes to conditions
+      const getCondition = (code: number): string => {
+        if (code === 0) return "Clear";
+        if (code <= 3) return "Cloudy";
+        if (code <= 67) return "Rain";
+        if (code <= 77) return "Snow";
+        if (code <= 99) return "Thunderstorm";
+        return "Clear";
+      };
       
       setWeather({
-        temperature: Math.round(data.main.temp),
-        condition: data.weather[0].main,
-        humidity: data.main.humidity,
-        windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
-        city: data.name,
+        temperature: Math.round(weatherData.current.temperature_2m),
+        condition: getCondition(weatherData.current.weather_code),
+        humidity: weatherData.current.relative_humidity_2m,
+        windSpeed: Math.round(weatherData.current.wind_speed_10m),
+        city: location.name,
       });
-      setCity(data.name);
+      setCity(location.name);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch weather data");
       setWeather(null);
