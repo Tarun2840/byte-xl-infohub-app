@@ -63,7 +63,7 @@ const CurrencyConverter = () => {
     <Card className="border-2 shadow-[var(--shadow-card)]">
       <CardHeader>
         <CardTitle className="text-2xl">Currency Converter</CardTitle>
-        <CardDescription>Convert INR to USD and EUR instantly</CardDescription>
+        <CardDescription className="headingCurrency">Convert INR to USD and EUR instantly</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 to-accent/10 p-4 rounded-lg">
